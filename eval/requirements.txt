@@ -1,0 +1,18 @@
+# Scoring (run_eval.py, summarize.py)
+apted
+beautifulsoup4
+func_timeout
+Levenshtein
+lxml
+numpy
+pandas
+pylatexenc
+scipy
+tabulate
+tqdm
+
+# Benchmark download (prepare_benchmark.py) and example inference (run_inference.py)
+datasets>=3.1
+huggingface_hub
+openai>=1.40
+Pillow
