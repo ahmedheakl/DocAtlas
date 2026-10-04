@@ -11,7 +11,7 @@
 # Set HOST=0.0.0.0 to accept connections from other machines.
 set -euo pipefail
 
-MODELS="qwen3-vl-2b qwen2.5-vl-3b nanonets-ocr-s nanonets-ocr2-3b deepseek-ocr dots-ocr"
+MODELS="qwen3-vl-2b qwen2.5-vl-3b nanonets-ocr-s nanonets-ocr2-3b deepseek-ocr dots-ocr chandra paddleocr-vl mineru2.5"
 
 if [ $# -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
   echo "usage: $0 <model> [port] [extra vllm serve arguments ...]" >&2
@@ -57,6 +57,20 @@ case "$MODEL" in
     # Flags from the dots.ocr README.
     exec vllm serve rednote-hilab/dots.ocr "${COMMON[@]}" --trust-remote-code \
       --chat-template-content-format string "$@" ;;
+  chandra)
+    # Flags of the Chandra repository's own launcher (chandra/scripts/vllm.py) for the original checkpoint.
+    exec vllm serve datalab-to/chandra "${COMMON[@]}" --dtype bfloat16 --max-model-len 32768 \
+      --max-num-seqs 32 --max-num-batched-tokens 65536 "$@" ;;
+  paddleocr-vl)
+    # Flags of PaddleX's own vLLM launcher for PaddleOCR-VL-0.9B; the model is served under the name
+    # the PaddleOCR pipeline asks for (PaddleOCR-VL-0.9B).
+    exec vllm serve PaddlePaddle/PaddleOCR-VL "${COMMON[@]}" --trust-remote-code --max-model-len 16384 \
+      --max-num-batched-tokens 131072 --served-model-name PaddleOCR-VL-0.9B "$@" ;;
+  mineru2.5)
+    # The MinerU client asks for a no-repeat n-gram constraint per request; its logits processor comes
+    # with `pip install mineru-vl-utils` (in the vLLM environment).
+    exec vllm serve opendatalab/MinerU2.5-2509-1.2B "${COMMON[@]}" \
+      --logits-processors mineru_vl_utils:MinerULogitsProcessor "$@" ;;
   *)
     echo "unknown model: $MODEL (known: $MODELS)" >&2
     echo "any other model that vLLM supports can be served with plain \`vllm serve <hf id>\`." >&2

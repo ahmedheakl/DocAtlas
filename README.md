@@ -163,7 +163,8 @@ python summarize.py results/
 ```
 
 See [`eval/README.md`](eval/README.md) for the prediction format, metrics, and output files, and for the vLLM launch
-commands and inference clients of the open models (Qwen-VL, Nanonets-OCR, DeepSeek-OCR, dots.ocr).
+commands and inference clients of the open models (Qwen-VL, Nanonets-OCR, DeepSeek-OCR, dots.ocr, Chandra,
+PaddleOCR-VL, MinerU2.5).
 
 ## Citation
 
