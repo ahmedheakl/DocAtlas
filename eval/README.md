@@ -31,6 +31,42 @@ python run_inference.py --images data/images --out predictions/my_model \
     --model my_model --base-url http://localhost:8000/v1 --api-key EMPTY
 ```
 
+### Open models with vLLM
+
+`serve_vllm.sh` starts a [vLLM](https://github.com/vllm-project/vllm) server with the flags each model needs
+(`pip install vllm`), and serves the model under the name in the first column:
+
+```bash
+CUDA_VISIBLE_DEVICES=0 ./serve_vllm.sh qwen3-vl-2b 8000      # <model> [port] [extra vllm arguments]
+```
+
+The server is ready once `http://localhost:8000/v1/models` answers. The first start of a model can take
+several minutes, because vLLM compiles and caches GPU kernels.
+
+General-purpose VLMs are prompted with the OmniDocBench conversion prompt built into `run_inference.py`.
+Document-parsing models are run with the prompt and post-processing published by their authors.
+
+| `<model>` | Checkpoint | Inference (add `--images data/images --out predictions/<model> --base-url http://localhost:8000/v1`) |
+|---|---|---|
+| `qwen3-vl-2b` | [Qwen/Qwen3-VL-2B-Instruct](https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct) | `run_inference.py --model qwen3-vl-2b --api-key EMPTY` |
+| `qwen2.5-vl-3b` | [Qwen/Qwen2.5-VL-3B-Instruct](https://huggingface.co/Qwen/Qwen2.5-VL-3B-Instruct) | `run_inference.py --model qwen2.5-vl-3b --api-key EMPTY` |
+| `nanonets-ocr-s` | [nanonets/Nanonets-OCR-s](https://huggingface.co/nanonets/Nanonets-OCR-s) | `run_inference.py --model nanonets-ocr-s --api-key EMPTY --prompt-file prompts/nanonets.txt --max-tokens 15000` |
+| `nanonets-ocr2-3b` | [nanonets/Nanonets-OCR2-3B](https://huggingface.co/nanonets/Nanonets-OCR2-3B) | `run_inference.py --model nanonets-ocr2-3b --api-key EMPTY --prompt-file prompts/nanonets.txt --max-tokens 15000` |
+| `deepseek-ocr` | [deepseek-ai/DeepSeek-OCR](https://huggingface.co/deepseek-ai/DeepSeek-OCR) | `run_inference_deepseek_ocr.py` |
+| `dots-ocr` | [rednote-hilab/dots.ocr](https://huggingface.co/rednote-hilab/dots.ocr) | `run_inference_dots_ocr.py --dots-ocr-repo <clone of github.com/rednote-hilab/dots.ocr>` (needs `pip install PyMuPDF`) |
+
+For example, DeepSeek-OCR end to end:
+
+```bash
+CUDA_VISIBLE_DEVICES=0 ./serve_vllm.sh deepseek-ocr 8000 &        # wait until the server is up
+python run_inference_deepseek_ocr.py --images data/images --out predictions/deepseek-ocr \
+    --base-url http://localhost:8000/v1
+python run_eval.py --gt data/DocAtlas-Bench.json --pred predictions/deepseek-ocr --out results --workers 16
+```
+
+All clients skip pages that already have a prediction, so an interrupted run can simply be started again.
+Use `--workers` to set the number of concurrent requests.
+
 ## 3. Score
 
 ```bash
@@ -39,7 +75,12 @@ python summarize.py results/                  # compare runs
 python summarize.py results/ --by language    # or: --by data_source, --by layout
 ```
 
-The full benchmark takes about 15 minutes on one CPU core.
+Scoring runs on the CPU: the full benchmark takes about 15 minutes on one core, and longer for outputs with long
+repeated passages. `--workers N` scores the pages in N parallel processes and gives the same results:
+
+```bash
+python run_eval.py --gt data/DocAtlas-Bench.json --pred predictions/my_model --out results --workers 16
+```
 
 ## What is reported
 

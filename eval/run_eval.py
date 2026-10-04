@@ -10,21 +10,26 @@ against the benchmark ground truth and writes:
 
 Usage:
   python run_eval.py --gt data/DocAtlas-Bench.json --pred predictions/my_model
+  python run_eval.py --gt data/DocAtlas-Bench.json --pred predictions/my_model --workers 16   # faster
 """
 import argparse
 import json
 import math
 import os
+import subprocess
 import sys
+import tempfile
+import time
 from collections import defaultdict
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "omnidocbench"))
 
-from registry.registry import DATASET_REGISTRY, EVAL_TASK_REGISTRY  # noqa: E402
+from registry.registry import DATASET_REGISTRY, EVAL_TASK_REGISTRY, METRIC_REGISTRY  # noqa: E402
 import dataset  # noqa: E402,F401  (registers the end-to-end dataset)
 import metrics  # noqa: E402,F401  (registers Edit_dist / TEDS)
 import task  # noqa: E402,F401  (registers end2end_eval)
+from metrics.show_result import get_full_labels_results, get_page_split, show_result  # noqa: E402
 from utils.result_dir import result_path, set_result_dir  # noqa: E402
 
 METRICS = {
@@ -46,6 +51,8 @@ def parse_args():
     ap.add_argument("--filter", action="append", default=[], metavar="KEY=VALUE",
                     help="only evaluate pages whose page attribute KEY equals VALUE, "
                          "e.g. --filter language=arabic (repeatable)")
+    ap.add_argument("--workers", type=int, default=1,
+                    help="score the pages in this many parallel processes (default: 1)")
     return ap.parse_args()
 
 
@@ -154,6 +161,96 @@ def build_summary(result, table_samples, pages, pages_with_pred, name, args):
     }
 
 
+def _page_of(sample):
+    """Image name of the page a result sample belongs to (same rule as the harness)."""
+    img_id = sample["img_id"]
+    return img_id if img_id.endswith((".jpg", ".png")) else "_".join(img_id.split("_")[:-1])
+
+
+def score_in_parallel(args, pages, has_prediction, name, save_name):
+    """Score the pages in ``args.workers`` processes and merge the results.
+
+    Every page is matched and scored on its own, so page shards can be scored by separate
+    run_eval.py processes; the aggregate scores are then computed here from the merged per-element
+    results with the same harness code as in a single-process run, and written to the same files.
+    Returns the scored table samples.
+    """
+    scored_pages = [p for p in pages if has_prediction(os.path.basename(p["page_info"]["image_path"]))]
+    workers = min(args.workers, len(scored_pages))
+    os.makedirs(args.out, exist_ok=True)
+    merged = {element: [] for element in METRICS}
+    per_table = {}
+    with tempfile.TemporaryDirectory(dir=args.out, prefix=".shards_") as tmp:
+        shards = []
+        for i in range(workers):
+            gt_path = os.path.join(tmp, f"gt_{i:03d}.json")
+            with open(gt_path, "w", encoding="utf-8") as f:
+                json.dump(scored_pages[i::workers], f, ensure_ascii=False)
+            log_path = os.path.join(tmp, f"shard_{i:03d}.log")
+            with open(log_path, "w", encoding="utf-8") as log:
+                process = subprocess.Popen(
+                    [sys.executable, os.path.abspath(__file__), "--gt", gt_path, "--pred", args.pred,
+                     "--out", os.path.join(tmp, f"{i:03d}"), "--name", name, "--match", args.match],
+                    stdout=log, stderr=subprocess.STDOUT)
+            shards.append((process, log_path))
+
+        print(f"scoring {len(scored_pages)} pages in {workers} processes ...", flush=True)
+        while True:
+            running = sum(process.poll() is None for process, _ in shards)
+            print(f"\r  {workers - running}/{workers} processes finished", end="", flush=True)
+            if not running:
+                break
+            time.sleep(2)
+        print()
+        failed = [log_path for process, log_path in shards if process.returncode != 0]
+        if failed:
+            with open(failed[0], encoding="utf-8", errors="replace") as f:
+                tail = "".join(f.readlines()[-30:])
+            sys.exit(f"{len(failed)} of {workers} scoring processes failed. End of the first log:\n{tail}")
+
+        for i in range(workers):
+            for element in METRICS:
+                with open(os.path.join(tmp, f"{i:03d}", f"{save_name}_{element}_result.json"), encoding="utf-8") as f:
+                    merged[element].extend(json.load(f))
+            with open(os.path.join(tmp, f"{i:03d}", f"{save_name}_table_per_table_TEDS.json"), encoding="utf-8") as f:
+                per_table.update(json.load(f))
+
+    # Same sample order as a single-process run: pages in ground-truth order, and the display formulas
+    # that were scored as text (their img_id carries an index suffix) after the text blocks.
+    position = {os.path.basename(p["page_info"]["image_path"]): i for i, p in enumerate(pages)}
+    for samples in merged.values():
+        samples.sort(key=lambda s: (_page_of(s) != s["img_id"], position[_page_of(s)]))
+
+    page_info = {os.path.basename(p["page_info"]["image_path"]): p["page_info"]["page_attribute"] for p in pages}
+    result_all = {}
+    for element, config in METRICS.items():
+        # the container the harness aggregates over in a single-process run
+        samples = DATASET_REGISTRY.get("recogition_end2end_base_dataset")(merged[element])
+        result = {}
+        for metric in config["metric"]:
+            if metric == "TEDS":  # computed per table by the worker processes; only averaged here
+                scores = {key: [s["metric"][key] for s in merged[element]] for key in ("TEDS", "TEDS_structure_only")}
+                result.update({key: {"all": sum(v) / len(v)} if v else {} for key, v in scores.items()})
+                with open(result_path(f"{save_name}_{element}_per_table_TEDS.json"), "w", encoding="utf-8") as f:
+                    json.dump(per_table, f, indent=4, ensure_ascii=False)
+            else:
+                samples, metric_result = METRIC_REGISTRY.get(metric)(samples).evaluate([], f"{save_name}_{element}")
+                result.update(metric_result)
+        if result:
+            print(f"【{element}】")
+            show_result(result)
+        result_all[element] = {
+            "all": result,
+            "group": get_full_labels_results(samples),
+            "page": get_page_split(samples, page_info),
+        }
+        with open(result_path(f"{save_name}_{element}_result.json"), "w", encoding="utf-8") as f:
+            json.dump(merged[element], f, indent=4, ensure_ascii=False)
+    with open(result_path(f"{save_name}_metric_result.json"), "w", encoding="utf-8") as f:
+        json.dump(result_all, f, indent=4, ensure_ascii=False)
+    return merged["table"]
+
+
 def fmt(value, digits):
     return "n/a" if value is None else f"{value:.{digits}f}"
 
@@ -215,24 +312,27 @@ def main():
         print(f"WARNING: {len(pages) - pages_with_pred} of {len(pages)} pages have no prediction; "
               "they are skipped, not scored as errors.", file=sys.stderr)
 
-    cfg = {
-        "metrics": METRICS,
-        "dataset": {
-            "dataset_name": "end2end_dataset",
-            "ground_truth": {"data_path": args.gt},
-            "prediction": {"data_path": args.pred},
-            "match_method": args.match,
-        },
-    }
-    if page_filter:
-        cfg["dataset"]["filter"] = page_filter
+    if args.workers > 1 and pages_with_pred > 1:
+        table_samples = score_in_parallel(args, pages, has_prediction, name, save_name)
+    else:
+        cfg = {
+            "metrics": METRICS,
+            "dataset": {
+                "dataset_name": "end2end_dataset",
+                "ground_truth": {"data_path": args.gt},
+                "prediction": {"data_path": args.pred},
+                "match_method": args.match,
+            },
+        }
+        if page_filter:
+            cfg["dataset"]["filter"] = page_filter
 
-    val_dataset = DATASET_REGISTRY.get("end2end_dataset")(cfg)
-    EVAL_TASK_REGISTRY.get("end2end_eval")(val_dataset, METRICS, args.gt, save_name)
+        val_dataset = DATASET_REGISTRY.get("end2end_dataset")(cfg)
+        EVAL_TASK_REGISTRY.get("end2end_eval")(val_dataset, METRICS, args.gt, save_name)
+        table_samples = val_dataset.samples["table"].samples
 
     with open(result_path(f"{save_name}_metric_result.json"), encoding="utf-8") as f:
         result = json.load(f)
-    table_samples = val_dataset.samples["table"].samples
     summary = build_summary(result, table_samples, pages, pages_with_pred, name, args)
     summary_path = result_path(f"{save_name}_summary.json")
     with open(summary_path, "w", encoding="utf-8") as f:

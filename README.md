@@ -162,7 +162,8 @@ python run_eval.py --gt data/DocAtlas-Bench.json --pred predictions/my_model --o
 python summarize.py results/
 ```
 
-See [`eval/README.md`](eval/README.md) for the prediction format, metrics, and output files.
+See [`eval/README.md`](eval/README.md) for the prediction format, metrics, and output files, and for the vLLM launch
+commands and inference clients of the open models (Qwen-VL, Nanonets-OCR, DeepSeek-OCR, dots.ocr).
 
 ## Citation
 
