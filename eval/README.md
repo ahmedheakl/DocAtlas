@@ -34,7 +34,8 @@ python run_inference.py --images data/images --out predictions/my_model \
 ### Open models with vLLM
 
 `serve_vllm.sh` starts a [vLLM](https://github.com/vllm-project/vllm) server with the flags each model needs
-(`pip install vllm`), and serves the model under the name in the first column:
+(`pip install vllm`), and serves the model under the name in the first column (PaddleOCR-VL under
+`PaddleOCR-VL-0.9B`, the name its own pipeline asks for):
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 ./serve_vllm.sh qwen3-vl-2b 8000      # <model> [port] [extra vllm arguments]
@@ -44,7 +45,8 @@ The server is ready once `http://localhost:8000/v1/models` answers. The first st
 several minutes, because vLLM compiles and caches GPU kernels.
 
 General-purpose VLMs are prompted with the OmniDocBench conversion prompt built into `run_inference.py`.
-Document-parsing models are run with the prompt and post-processing published by their authors.
+Document-parsing models are run with the prompt and post-processing published by their authors; for Chandra,
+PaddleOCR-VL and MinerU2.5 the clients call the authors' own code.
 
 | `<model>` | Checkpoint | Inference (add `--images data/images --out predictions/<model> --base-url http://localhost:8000/v1`) |
 |---|---|---|
@@ -54,6 +56,9 @@ Document-parsing models are run with the prompt and post-processing published by
 | `nanonets-ocr2-3b` | [nanonets/Nanonets-OCR2-3B](https://huggingface.co/nanonets/Nanonets-OCR2-3B) | `run_inference.py --model nanonets-ocr2-3b --api-key EMPTY --prompt-file prompts/nanonets.txt --max-tokens 15000` |
 | `deepseek-ocr` | [deepseek-ai/DeepSeek-OCR](https://huggingface.co/deepseek-ai/DeepSeek-OCR) | `run_inference_deepseek_ocr.py` |
 | `dots-ocr` | [rednote-hilab/dots.ocr](https://huggingface.co/rednote-hilab/dots.ocr) | `run_inference_dots_ocr.py --dots-ocr-repo <clone of github.com/rednote-hilab/dots.ocr>` (needs `pip install PyMuPDF`) |
+| `chandra` | [datalab-to/chandra](https://huggingface.co/datalab-to/chandra) | `run_inference_chandra.py --chandra-repo <clone of github.com/datalab-to/chandra>` (setup in the script's header) |
+| `paddleocr-vl` | [PaddlePaddle/PaddleOCR-VL](https://huggingface.co/PaddlePaddle/PaddleOCR-VL) | `run_inference_paddleocr_vl.py` (needs `pip install paddlepaddle "paddleocr[doc-parser]"`) |
+| `mineru2.5` | [opendatalab/MinerU2.5-2509-1.2B](https://huggingface.co/opendatalab/MinerU2.5-2509-1.2B) | `run_inference_mineru.py` (needs `pip install "mineru==2.7.6"`, and `mineru-vl-utils` in the vLLM environment) |
 
 For example, DeepSeek-OCR end to end:
 
