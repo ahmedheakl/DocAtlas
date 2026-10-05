@@ -12,6 +12,7 @@
 
 <p align="center">
   <a href="https://arxiv.org/abs/2605.12623"><img src="https://img.shields.io/badge/📄_arXiv-Paper-blue" alt="Paper"></a>
+  <a href="https://ahmedheakl.github.io/DocAtlas/"><img src="https://img.shields.io/badge/🌐_Project-Website-87CEEB" alt="Website"></a>
   <a href="https://huggingface.co/datasets/ahmedheakl/docatlas_instruct"><img src="https://img.shields.io/badge/🤗_Training_Data-Access-green" alt="Training data"></a>
   <a href="https://huggingface.co/datasets/ahmedheakl/DocAtlas-Bench"><img src="https://img.shields.io/badge/🤗_Benchmark-Access-yellow" alt="Benchmark"></a>
   <a href="https://github.com/EvolvingLMMs-Lab/lmms-eval/tree/main/lmms_eval/tasks/docatlas_bench"><img src="https://img.shields.io/badge/📊_Eval-LMMs--Eval-orange" alt="lmms-eval"></a>
