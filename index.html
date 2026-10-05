@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DocAtlas: Multilingual Document Understanding Across 80+ Languages</title>
+  <meta name="description" content="DocAtlas builds OCR training data and a benchmark for 82 languages with model-free annotations obtained by differential rendering.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="DocAtlas: Multilingual Document Understanding Across 80+ Languages">
+  <meta property="og:description" content="A 360K-page training corpus and a 5.8K-page benchmark across 82 languages and 9 tasks, annotated by differential rendering.">
+  <meta property="og:image" content="https://ahmedheakl.github.io/DocAtlas/assets/img/social.jpg">
+  <meta property="og:url" content="https://ahmedheakl.github.io/DocAtlas/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#0b1020">
+  <link rel="icon" type="image/png" href="assets/img/favicon.png">
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Armenian:wght@400;700&family=Noto+Sans+Ethiopic:wght@400;700&family=Noto+Sans+Georgian:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<svg xmlns="http://www.w3.org/2000/svg" class="sprite" aria-hidden="true">
+  <symbol id="i-paper" viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></symbol>
+  <symbol id="i-data" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></symbol>
+  <symbol id="i-bench" viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5zM3 13l9 5 9-5M3 17.5l9 5 9-5"/></symbol>
+  <symbol id="i-rtl" viewBox="0 0 24 24"><path d="M20 7H9a4 4 0 0 0 0 8h2M20 7l-4-4M20 7l-4 4M15 21V11"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4z"/></symbol>
+  <symbol id="i-github" viewBox="0 0 24 24"><path class="fill" d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.8c-2.8.6-3.4-1.2-3.4-1.2-.5-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.6 1 1.6 1 .9 1.6 2.4 1.1 3 .9.1-.7.4-1.1.6-1.4-2.2-.3-4.6-1.1-4.6-5a3.9 3.9 0 0 1 1-2.7 3.6 3.6 0 0 1 .1-2.7s.8-.3 2.8 1a9.500 9.500 0 0 1 5 0c1.900-1.300 2.700-1 2.700-1a3.600 3.600 0 0 1 .1 2.700 3.900 3.900 0 0 1 1 2.700c0 3.900-2.300 4.700-4.600 5 .4.300.7.900.7 1.900v2.800c0 .3.200.6.700.5A10 10 0 0 0 12 2z"/></symbol>
+</svg>
+
+<div class="progress" id="progress" aria-hidden="true"></div>
+<header class="nav" id="nav">
+  <a class="brand" href="#top"><img src="assets/img/logo.png" alt="" width="34" height="34"><span>DocAtlas</span></a>
+  <nav class="nav-links" aria-label="Sections">
+    <a href="#overview">Overview</a>
+    <a href="#method">Method</a>
+    <a href="#corpus">Corpus</a>
+    <a href="#benchmark">Benchmark</a>
+    <a href="#leaderboard">Leaderboard</a>
+    <a href="#insights">Insights</a>
+    <a href="#evaluate">Evaluate</a>
+  </nav>
+  <a class="nav-gh" href="https://github.com/ahmedheakl/DocAtlas" aria-label="GitHub repository"><svg><use href="#i-github"/></svg><span>GitHub</span></a>
+</header>
+
+<main>
+
+<section class="hero" id="top">
+  <canvas id="globe" aria-hidden="true"></canvas>
+  <div class="hero-glow" aria-hidden="true"></div>
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <a class="pill" href="#evaluate"><b>New</b><span>DocAtlas-Bench is now part of lmms-eval</span><svg><use href="#i-arrow"/></svg></a>
+      <h1>Doc<em>Atlas</em></h1>
+      <p class="hero-sub">Multilingual Document Understanding Across 80+ Languages</p>
+      <p class="hero-lead">OCR training data and a benchmark for 82 languages, annotated by differential rendering of the documents themselves instead of by models.</p>
+      <p class="authors">
+        Ahmed Heakl<sup>1</sup>, Youssef Mohamed<sup>1</sup>, Abdullah Sohail<sup>1</sup>, Rania Elbadry<sup>1</sup>, Ahmed Nassar<sup>2</sup>, Peter W. J. Staar<sup>2</sup>, Fahad Shahbaz Khan<sup>1</sup>, Imran Razzak<sup>1</sup>, Salman Khan<sup>1</sup>
+        <span class="affil"><sup>1</sup>MBZUAI &nbsp;·&nbsp; <sup>2</sup>IBM Research</span>
+      </p>
+      <div class="cta">
+        <a class="btn btn-primary" href="https://arxiv.org/abs/2605.12623"><svg><use href="#i-paper"/></svg>Paper</a>
+        <a class="btn" href="https://github.com/ahmedheakl/DocAtlas"><svg><use href="#i-code"/></svg>Code</a>
+        <a class="btn" href="https://huggingface.co/datasets/ahmedheakl/docatlas_instruct"><svg><use href="#i-data"/></svg>Training data</a>
+        <a class="btn" href="https://huggingface.co/datasets/ahmedheakl/DocAtlas-Bench"><svg><use href="#i-bench"/></svg>Benchmark</a>
+        <a class="btn" href="https://github.com/EvolvingLMMs-Lab/lmms-eval/tree/main/lmms_eval/tasks/docatlas_bench"><svg><use href="#i-play"/></svg>lmms-eval</a>
+      </div>
+    </div>
+  </div>
+  <div class="wrap">
+    <dl class="stats">
+      <div><dt data-count="82">82</dt><dd>languages</dd></div>
+      <div><dt data-count="10">10</dt><dd>writing systems</dd></div>
+      <div><dt data-count="360" data-suffix="K">360K</dt><dd>training pages</dd></div>
+      <div><dt data-count="5.8" data-suffix="K" data-decimals="1">5.8K</dt><dd>benchmark pages</dd></div>
+      <div><dt data-count="9">9</dt><dd>evaluation tasks</dd></div>
+      <div><dt data-count="14">14</dt><dd>models evaluated</dd></div>
+    </dl>
+  </div>
+</section>
+
+<section class="news" id="news" aria-label="Announcements">
+  <div class="wrap">
+    <ol class="timeline">
+      <li><time datetime="2026-05-12">May 12, 2026</time><a href="https://arxiv.org/abs/2605.12623">Paper on arXiv</a></li>
+      <li><time datetime="2026-05-19">May 19, 2026</time><a href="https://huggingface.co/datasets/ahmedheakl/docatlas_instruct">Training data released</a></li>
+      <li><time datetime="2026-10-02">Oct 2, 2026</time><a href="https://huggingface.co/datasets/ahmedheakl/DocAtlas-Bench">Benchmark released</a></li>
+      <li><time datetime="2026-10-02">Oct 2, 2026</time><a href="https://github.com/ahmedheakl/DocAtlas/tree/main/eval">Evaluation code released</a></li>
+      <li class="latest"><time datetime="2026-10-05">Oct 5, 2026</time><a href="https://github.com/EvolvingLMMs-Lab/lmms-eval/tree/main/lmms_eval/tasks/docatlas_bench">Evaluation added to lmms-eval</a></li>
+    </ol>
+  </div>
+</section>
+
+<section class="plate light" id="overview">
+  <div class="wrap">
+    <header class="plate-head reveal">
+      <span class="eyebrow">Plate 01 · Overview</span>
+      <h2>Annotation quality, not model scale, bounds multilingual document understanding.</h2>
+    </header>
+    <div class="two-col reveal">
+      <p class="lead">Multilingual document understanding remains limited for low-resource languages: training data is scarce, and model-based annotation pipelines pass the biases of existing models on to the next ones.</p>
+      <p>DocAtlas extracts ground truth directly from document sources. Two pipelines, differential rendering of native Word documents and LaTeX-based synthesis for right-to-left scripts, produce structural annotations in a unified <em>DocTag</em> format that encodes layout, text and component types, without learned models for the core annotation. The result is a 360K-page training corpus and a difficulty-stratified benchmark of 5,862 pages across 82 languages and 9 tasks.</p>
+    </div>
+    <figure class="figure reveal">
+      <img src="assets/img/teaser.webp" width="1800" height="592" alt="World map of script coverage and a chart of cross-lingual transfer after DPO training" loading="lazy">
+      <figcaption><b>Left:</b> script coverage across 80+ languages and 10 writing systems. <b>Right:</b> cross-lingual transfer after DPO training, with gains in both in-domain and out-of-domain accuracy.</figcaption>
+    </figure>
+    <div class="cards four reveal">
+      <article class="card"><span class="card-icon"><svg><use href="#i-layers"/></svg></span><h3>Model-free annotation</h3><p>Differential rendering of 307K native Word documents across 82 languages gives layout, text and component labels from rendering differences alone.</p></article>
+      <article class="card"><span class="card-icon"><svg><use href="#i-rtl"/></svg></span><h3>Right-to-left coverage</h3><p>A LaTeX-based synthetic pipeline adds 52K precisely annotated pages in Arabic, Hebrew, Urdu and Persian.</p></article>
+      <article class="card"><span class="card-icon"><svg><use href="#i-globe"/></svg></span><h3>Multilingual benchmark</h3><p>5.8K difficulty-stratified pages across 82 languages and 9 tasks, with 14 state-of-the-art models evaluated under unified metrics.</p></article>
+      <article class="card"><span class="card-icon"><svg><use href="#i-spark"/></svg></span><h3>Stable adaptation with DPO</h3><p>In-domain accuracy improves by 1.9% and out-of-domain by 1.8%, where supervised fine-tuning degrades out-of-domain performance by up to 21%.</p></article>
+    </div>
+  </div>
+</section>
+
+<section class="plate dark" id="method">
+  <div class="wrap">
+    <header class="plate-head reveal">
+      <span class="eyebrow">Plate 02 · Method</span>
+      <h2>Annotations by subtraction</h2>
+      <p>Each component of a Word document is tinted through its styling attributes. The document is rendered twice, with and without the tint, and the two renderings are subtracted pixel by pixel. What remains are per-category regions, which contour analysis turns into bounding boxes.</p>
+    </header>
+
+    <div class="diff reveal" aria-label="Illustration of differential rendering on a benchmark page">
+      <figure><img src="assets/img/diff_colorized.webp" width="720" height="753" alt="Page with components tinted by category" loading="lazy"><figcaption>Colorized rendering</figcaption></figure>
+      <span class="op">&minus;</span>
+      <figure><img src="assets/img/diff_plain.webp" width="720" height="753" alt="The same page rendered normally" loading="lazy"><figcaption>Plain rendering</figcaption></figure>
+      <span class="op">=</span>
+      <figure><img src="assets/img/diff_mask.webp" width="720" height="753" alt="Pixel difference showing one coloured region per component" loading="lazy"><figcaption>Pixel-wise difference</figcaption></figure>
+      <span class="op"><svg><use href="#i-arrow"/></svg></span>
+      <figure><img src="assets/img/diff_boxes.webp" width="720" height="753" alt="Bounding boxes per component category" loading="lazy"><figcaption>Boxes per category</figcaption></figure>
+    </div>
+    <p class="note center reveal">Illustration on a page of the benchmark, drawn from its annotations.</p>
+
+    <div class="pipelines">
+      <article class="pipeline reveal">
+        <div class="pipeline-text">
+          <span class="tag">Pipeline A</span>
+          <h3>Native Word documents</h3>
+          <ol class="steps">
+            <li><b>Collect.</b> Candidate <code>.doc</code>/<code>.docx</code> URLs come from Common Crawl. They are deduplicated, downloaded and filtered for unsafe or corrupted files.</li>
+            <li><b>Recover structure.</b> Components are identified from native OpenXML tags and built-in styles, then tinted by category.</li>
+            <li><b>Render and subtract.</b> Colorized and uncolorized versions are rendered through MS Word; their pixel-wise difference gives per-category boxes.</li>
+            <li><b>Align and serialize.</b> Word-level boxes are matched to components by IoU, and every page is written as DocTags: type, geometry and text.</li>
+          </ol>
+        </div>
+        <figure class="figure on-dark"><img src="assets/img/pipeline_native.webp" width="1800" height="599" alt="Diagram of the native DOCX pipeline" loading="lazy"></figure>
+      </article>
+
+      <article class="pipeline reveal">
+        <div class="pipeline-text">
+          <span class="tag">Pipeline B</span>
+          <h3>Synthetic right-to-left documents</h3>
+          <p>PDF parsers fail on bidirectional text, so right-to-left scripts are synthesized instead. Structured inputs (EPUB, HTML, XML) are parsed into a Docling JSON schema and rendered through <b>205 LuaTeX templates</b> for Arabic, Hebrew, Urdu and Persian. Custom LaTeX commands log the position of every element over three compilation passes, which recovers exact bounding boxes.</p>
+          <ul class="facts">
+            <li><b>52K</b> pages in the corpus</li>
+            <li><b>4</b> right-to-left languages</li>
+            <li><b>183</b> pages per minute</li>
+          </ul>
+        </div>
+        <figure class="figure on-dark"><img src="assets/img/pipeline_rtl.webp" width="1501" height="848" alt="Diagram of the synthetic right-to-left pipeline" loading="lazy"></figure>
+      </article>
+
+      <article class="pipeline reveal">
+        <div class="pipeline-text">
+          <span class="tag">Compared with WordScape</span>
+          <h3>Three differences that matter</h3>
+          <ol class="steps">
+            <li><b>Differential, not single-pass.</b> Subtracting two renderings separates injected color codes from colors the document already had.</li>
+            <li><b>MS Word, not LibreOffice.</b> Rendering with the native engine removes the drift caused by font substitution and text reflow.</li>
+            <li><b>Text tied to geometry.</b> Word-level IoU matching jointly encodes text, geometry and component type.</li>
+          </ol>
+        </div>
+        <figure class="figure on-dark narrow"><img src="assets/img/wordscape_comparison.webp" width="1302" height="1149" alt="Comparison with WordScape" loading="lazy"></figure>
+      </article>
+    </div>
+
+    <div class="strip reveal">
+      <div><b>98.9%</b><span>of retained documents keep more than 95% annotation accuracy in a manual check</span></div>
+      <div><b>100K+</b><span>pages per day on a single CPU, without a GPU</span></div>
+      <div><b>31</b><span>structural element types, from text and tables to equations and bibliographies</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="plate light" id="corpus">
+  <div class="wrap">
+    <header class="plate-head reveal">
+      <span class="eyebrow">Plate 03 · Corpus</span>
+      <h2>From 11.4M URLs to 360K training pages</h2>
+      <p>The raw collection spans 5.48M pages across 136 languages from Common Crawl, under permissive licenses. Quality filtering and difficulty-aware sampling keep 360K training pages in 82 languages and more than 25 content domains.</p>
+    </header>
+    <div class="split corpus reveal">
+      <div class="panel">
+        <h3>Collection funnel of the native pipeline</h3>
+        <div id="funnel" class="funnel"></div>
+        <p class="note">Automated PII detection removed 5.15% of the documents initially collected.</p>
+      </div>
+      <div class="panel">
+        <h3>Training data landscape</h3>
+        <div class="table-scroll">
+          <table class="compare">
+            <thead><tr><th>Dataset</th><th>Samples</th><th>Languages</th><th>Annotation</th><th>Tasks</th><th>Model-free</th></tr></thead>
+            <tbody>
+              <tr><td>FUNSD</td><td>199</td><td>1</td><td>Manual</td><td>1</td><td class="yes"></td></tr>
+              <tr><td>XFUND</td><td>1.3K</td><td>7</td><td>Manual</td><td>2</td><td class="yes"></td></tr>
+              <tr><td>PubLayNet</td><td>361K</td><td>1</td><td>Rule-based</td><td>3</td><td class="yes"></td></tr>
+              <tr><td>DocLayNet</td><td>81K</td><td>4</td><td>Manual</td><td>4</td><td class="yes"></td></tr>
+              <tr><td>DocBank</td><td>500K</td><td>1</td><td>Model-based</td><td>3</td><td class="no"></td></tr>
+              <tr><td>SynthTIGER</td><td>10M</td><td>1</td><td>Rule-based</td><td>1</td><td class="yes"></td></tr>
+              <tr><td>WordScape</td><td>9.5M</td><td>136</td><td>Colorization</td><td>3</td><td class="yes"></td></tr>
+              <tr><td>DIT700K</td><td>700K</td><td>1</td><td>Layout detector</td><td>3</td><td class="no"></td></tr>
+              <tr class="ours"><td>DocAtlas</td><td>360K</td><td>82</td><td>Differential rendering</td><td>9</td><td class="yes"></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <figure class="figure reveal">
+      <img src="assets/img/language_distribution.webp" width="1800" height="589" alt="Language frequency distribution of the corpus" loading="lazy">
+      <figcaption>Language frequency in the corpus. High-resource languages such as <code>en</code>, <code>ru</code> and <code>es</code> form the head; low-resource languages such as <code>ps</code>, <code>ckb</code>, <code>ku</code> and <code>azb</code> form a long tail.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="plate dark" id="benchmark">
+  <div class="wrap">
+    <header class="plate-head reveal">
+      <span class="eyebrow">Plate 04 · Benchmark</span>
+      <h2>5,862 pages, 82 languages, 9 tasks</h2>
+      <p>Pages are embedded with ResNet-50 features, clustered with FAISS and stratified into equal easy, medium and hard splits, with up to 100 pages per language. The 5,575 page-level samples are complemented by 144 curated formula samples and chart data in 15 languages.</p>
+    </header>
+
+    <div class="panel glass reveal">
+      <h3>Coverage of document parsing benchmarks</h3>
+      <div class="table-scroll">
+        <table class="matrix">
+          <thead><tr><th>Benchmark</th><th>Year</th><th class="wide">Languages</th><th>End-to-end</th><th>Reading order</th><th>Text</th><th>Table</th><th>Formula</th><th>Chart</th></tr></thead>
+          <tbody id="matrix-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="explorer reveal" id="explorer">
+      <div class="explorer-head">
+        <div>
+          <h3>Explore pages of the benchmark</h3>
+          <p>Twelve pages in nine scripts. Hover over a region to see its DocTag; switch the right panel between the ground-truth Markdown and the raw DocTags.</p>
+        </div>
+        <label class="switch"><input type="checkbox" id="toggle-boxes" checked><span></span>Annotations</label>
+      </div>
+      <div class="chips" id="lang-chips" role="tablist" aria-label="Example pages"></div>
+      <div class="stage">
+        <div class="viewer">
+          <div class="page" id="page"><img id="page-img" alt="" width="1000" height="1414"><div class="boxes" id="boxes"></div></div>
+          <div class="legend" id="legend"></div>
+        </div>
+        <div class="side">
+          <div class="meta" id="meta"></div>
+          <div class="tabs" role="tablist">
+            <button class="tab active" data-tab="markdown" role="tab">Markdown</button>
+            <button class="tab" data-tab="doctags" role="tab">DocTags</button>
+          </div>
+          <div class="tab-body gt" id="tab-markdown" lang=""></div>
+          <pre class="tab-body code hidden" id="tab-doctags"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="plate light" id="leaderboard">
+  <div class="wrap">
+    <header class="plate-head reveal">
+      <span class="eyebrow">Plate 05 · Leaderboard</span>
+      <h2>Fourteen systems and one adapted model</h2>
+      <p>Text recognition (edit distance), table structure (TEDS), formula transcription and reading order on the multilingual benchmark. Overall is the average of text accuracy and table TEDS. Click a column to sort.</p>
+    </header>
+    <div class="board reveal">
+      <div class="board-tools">
+        <div class="seg" id="board-filter">
+          <button class="active" data-filter="all">All</button>
+          <button data-filter="General">General VLMs</button>
+          <button data-filter="Expert">Expert VLMs</button>
+        </div>
+        <span class="note">Table 3 of the paper</span>
+      </div>
+      <div class="table-scroll">
+        <table class="leader" id="leader">
+          <thead>
+            <tr>
+              <th class="rank">#</th>
+              <th data-key="name" class="left">Method</th>
+              <th data-key="params">Params</th>
+              <th data-key="text" data-dir="asc">Text Edit &darr;</th>
+              <th data-key="teds" data-dir="desc">Table TEDS &uarr;</th>
+              <th data-key="formula" data-dir="asc">Formula Edit &darr;</th>
+              <th data-key="order" data-dir="asc">Read Order Edit &darr;</th>
+              <th data-key="overall" data-dir="desc" class="sorted">Overall &uarr;</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="plate paper" id="insights">
+  <div class="wrap">
+    <header class="plate-head reveal">
+      <span class="eyebrow">Plate 06 · Insights</span>
+      <h2>What the benchmark shows</h2>
+    </header>
+
+    <div class="insight reveal">
+      <div class="insight-text">
+        <span class="num">01</span>
+        <h3>A stark resource divide</h3>
+        <p>High-resource languages stay at 80&ndash;95% accuracy with narrow variance. Low-resource scripts range from 20% to 85%, and their median is often below 40%. Training data availability decides multilingual robustness more than architecture does.</p>
+        <div class="callouts"><div><b>80&ndash;95%</b><span>high-resource languages</span></div><div><b>&lt; 40%</b><span>median, low-resource scripts</span></div></div>
+      </div>
+      <figure class="figure"><img src="assets/img/resource_gap.webp" width="1796" height="572" alt="Accuracy distribution across high- and low-resource languages for nine models" loading="lazy"></figure>
+    </div>
+
+    <div class="insight flip reveal">
+      <div class="insight-text">
+        <span class="num">02</span>
+        <h3>Tables are the ceiling</h3>
+        <p>Text recognition is far ahead of structured extraction. The best systems reach text edit distances of 0.068&ndash;0.095, while table TEDS plateaus at 71&ndash;73% whatever the language. Spatial reasoning over layouts is the main bottleneck.</p>
+        <div class="callouts"><div><b>73%</b><span>TEDS ceiling</span></div><div><b>0.055</b><span>best text edit distance</span></div></div>
+      </div>
+      <div class="chart-card"><div id="chart-scatter" class="chart"></div><p class="note">Each point is a system of the leaderboard. Text accuracy is 100 &times; (1 &minus; text edit distance).</p></div>
+    </div>
+
+    <div class="insight reveal">
+      <div class="insight-text">
+        <span class="num">03</span>
+        <h3>Language families are not equal</h3>
+        <p>Indo-European and Cyrillic scripts reach 80&ndash;87% accuracy. Japonic languages range from 26.9% to 70.5%, and even the top models struggle on Austroasiatic languages. Top models such as DeepseekOCR and Chandra are consistent; others degrade on low-resource scripts.</p>
+      </div>
+      <figure class="figure"><img src="assets/img/language_families.webp" width="1504" height="642" alt="OCR accuracy across language families" loading="lazy"></figure>
+    </div>
+
+    <div class="insight flip reveal">
+      <div class="insight-text">
+        <span class="num">04</span>
+        <h3>Charts separate specialists from generalists</h3>
+        <p>Gemini-2.5-Flash has the highest average chart score (61.82%) and is consistent across languages. Expert OCR models degrade sharply by language: DeepseekOCR scores 87% on English but 8&ndash;17% on Thai, Arabic and Italian.</p>
+      </div>
+      <div class="chart-card"><div id="chart-types" class="chart"></div><p class="note">Mean score per chart type (Table 4 of the paper).</p></div>
+    </div>
+
+    <div class="mini-grid reveal">
+      <article class="mini"><b>88,036</b><h4>errors in 12 categories</h4><p>Formatting (14.6%), character encoding (13.2%) and content omission (13.2%) are among the most frequent.</p></article>
+      <article class="mini"><b>65&ndash;70%</b><h4>on academic literature and reports</h4><p>The same models fall to 30&ndash;45% on newspapers and magazines, where dense multi-column layouts break learned priors.</p></article>
+      <article class="mini"><b>&le; 3B</b><h4>is enough to compete</h4><p>Several compact expert systems match or exceed general-purpose VLMs on both text and table scores.</p></article>
+    </div>
+  </div>
+</section>
+
+<section class="plate dark" id="training">
+  <div class="wrap">
+    <header class="plate-head reveal">
+      <span class="eyebrow">Plate 07 · Training</span>
+      <h2>Adapting to new languages without forgetting the old ones</h2>
+      <p>Three strategies are compared for extending OCR models to new languages: full-page supervised fine-tuning, component-level fine-tuning, and Direct Preference Optimization, which prefers the rendering-derived ground truth over the base model's own prediction.</p>
+    </header>
+
+    <div class="split stretch reveal">
+      <div class="panel glass">
+        <div class="panel-head">
+          <h3>In-domain and out-of-domain accuracy</h3>
+          <div class="seg small" id="adapt-models"></div>
+        </div>
+        <div id="chart-adapt" class="chart tall"></div>
+        <p class="note">In: trained languages. Out: unseen languages. Table 6 of the paper.</p>
+        <ul class="takeaways">
+          <li><b class="bad">&minus;21.3</b><span>Component-level fine-tuning has the highest in-domain gains and the worst forgetting on unseen languages.</span></li>
+          <li><b class="bad">&minus;10.1</b><span>Full-page fine-tuning also trades out-of-domain accuracy for in-domain gains.</span></li>
+          <li><b class="good">+1.9 / +1.8</b><span>DPO is the only strategy that improves both, and the pattern holds for all four models.</span></li>
+        </ul>
+      </div>
+      <div class="stack">
+        <div class="panel glass">
+          <h3>Which layers to train</h3>
+          <div id="chart-lora" class="chart"></div>
+          <p class="note">Change in table TEDS against the baseline (71.5) for full fine-tuning and five LoRA variants. Training only QKV gains on new languages without losing on base languages. Table 5 of the paper.</p>
+        </div>
+        <div class="panel glass">
+          <h3>The positive signal matters</h3>
+          <div id="chart-signal" class="chart short"></div>
+          <p class="note">DPO on DeepseekOCR. GPT-4o distillation hurts out-of-domain transfer; rendering-derived ground truth improves both. Table 7 of the paper.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="insight on-dark reveal">
+      <div class="insight-text">
+        <h3>Gains follow typology</h3>
+        <p>Sino-Tibetan, Japonic and Austroasiatic languages gain the most from DPO training, up to 40% on text for Sino-Tibetan. Indo-European and Uralic languages gain less than 5%, and Cyrillic gains are skewed toward tables.</p>
+        <p>DPO-trained models also generalize beyond digital-native sources. On DocPTBench and OmniDocBench, DocAtlas-DeepSeek reduces edit distance from 22.1% to 20.7% and from 0.137 to 0.122 over the DeepseekOCR baseline.</p>
+      </div>
+      <figure class="figure on-dark"><img src="assets/img/dpo_gains.webp" width="1798" height="511" alt="DPO gains across language families" loading="lazy"></figure>
+    </div>
+  </div>
+</section>
+
+<section class="plate light" id="evaluate">
+  <div class="wrap">
+    <header class="plate-head reveal">
+      <span class="eyebrow">Plate 08 · Evaluate</span>
+      <h2>Run the benchmark</h2>
+      <p>A model converts each page image to Markdown. The output is scored for text (edit distance), tables (TEDS) and reading order (edit distance).</p>
+    </header>
+    <div class="codebox reveal">
+      <div class="codebox-head">
+        <div class="tabs" role="tablist">
+          <button class="tab active" data-code="lmms">lmms-eval</button>
+          <button class="tab" data-code="official">Official scripts</button>
+          <button class="tab" data-code="hf">Load the data</button>
+        </div>
+        <button class="copy" id="copy-code"><svg><use href="#i-copy"/></svg><span>Copy</span></button>
+      </div>
+<pre class="code-pane" id="code-lmms"><span class="c"># the task lives in lmms-eval: lmms_eval/tasks/docatlas_bench</span>
+pip install git+https://github.com/EvolvingLMMs-Lab/lmms-eval.git
+pip install beautifulsoup4 func-timeout lxml pylatexenc scipy
+
+python -m lmms_eval --model &lt;model&gt; --tasks docatlas_bench --batch_size 1</pre>
+<pre class="code-pane hidden" id="code-official">git clone https://github.com/ahmedheakl/DocAtlas && cd DocAtlas/eval
+pip install -r requirements.txt
+
+<span class="c"># 1. download the benchmark (ground truth + page images)</span>
+python prepare_benchmark.py --out data
+
+<span class="c"># 2. run a model: one predictions/&lt;model&gt;/&lt;page id&gt;.md per image</span>
+python run_inference.py --images data/images --out predictions/my_model \
+    --model my_model --base-url http://localhost:8000/v1 --api-key EMPTY
+
+<span class="c"># 3. score</span>
+python run_eval.py --gt data/DocAtlas-Bench.json --pred predictions/my_model --out results
+python summarize.py results/</pre>
+<pre class="code-pane hidden" id="code-hf"><span class="k">from</span> datasets <span class="k">import</span> load_dataset
+
+bench = load_dataset(<span class="s">"ahmedheakl/DocAtlas-Bench"</span>, split=<span class="s">"test"</span>)   <span class="c"># 5,575 pages</span>
+page = bench[0]
+page[<span class="s">"image"</span>]      <span class="c"># page image</span>
+page[<span class="s">"language"</span>]   <span class="c"># language code</span>
+page[<span class="s">"markdown"</span>]   <span class="c"># ground truth as Markdown</span>
+page[<span class="s">"doctags"</span>]    <span class="c"># ground truth as DocTags</span></pre>
+    </div>
+    <div class="links reveal">
+      <a href="https://github.com/EvolvingLMMs-Lab/lmms-eval/tree/main/lmms_eval/tasks/docatlas_bench"><span>lmms-eval task</span><svg><use href="#i-arrow"/></svg></a>
+      <a href="https://github.com/ahmedheakl/DocAtlas/tree/main/eval"><span>Evaluation code</span><svg><use href="#i-arrow"/></svg></a>
+      <a href="https://huggingface.co/datasets/ahmedheakl/DocAtlas-Bench"><span>DocAtlas-Bench</span><svg><use href="#i-arrow"/></svg></a>
+      <a href="https://huggingface.co/datasets/ahmedheakl/docatlas_instruct"><span>Training data</span><svg><use href="#i-arrow"/></svg></a>
+    </div>
+  </div>
+</section>
+
+<section class="plate paper" id="cite">
+  <div class="wrap">
+    <header class="plate-head reveal">
+      <span class="eyebrow">Plate 09 · Citation</span>
+      <h2>Cite DocAtlas</h2>
+    </header>
+    <div class="codebox reveal">
+      <div class="codebox-head"><span class="file">BibTeX</span><button class="copy" id="copy-bib"><svg><use href="#i-copy"/></svg><span>Copy</span></button></div>
+<pre class="code-pane wrap-lines" id="bibtex">@article{heakl2026docatlas,
+  title={DocAtlas: Multilingual Document Understanding Across 80+ Languages},
+  author={Heakl, Ahmed and Mohamed, Youssef and Sohail, Abdullah and Elbadry, Rania and Nassar, Ahmed and Staar, Peter WJ and Khan, Fahad Shahbaz and Razzak, Imran and Khan, Salman},
+  journal={arXiv preprint arXiv:2605.12623},
+  year={2026}
+}</pre>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap footer-grid">
+    <div class="footer-brand"><img src="assets/img/logo.png" alt="" width="40" height="40"><div><b>DocAtlas</b><span>MBZUAI · IBM Research</span></div></div>
+    <p>Code under the MIT License. Datasets under CC-BY 4.0. The evaluation builds on OmniDocBench.</p>
+    <nav aria-label="Links">
+      <a href="https://arxiv.org/abs/2605.12623">Paper</a>
+      <a href="https://github.com/ahmedheakl/DocAtlas">GitHub</a>
+      <a href="https://huggingface.co/datasets/ahmedheakl/DocAtlas-Bench">Benchmark</a>
+      <a href="https://huggingface.co/datasets/ahmedheakl/docatlas_instruct">Training data</a>
+    </nav>
+  </div>
+</footer>
+
+<div class="tooltip" id="tooltip" role="status"></div>
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Figure" hidden><img alt=""><button aria-label="Close"><svg><use href="#i-x"/></svg></button></div>
+<script src="assets/js/main.js" defer></script>
+</body>
+</html>
